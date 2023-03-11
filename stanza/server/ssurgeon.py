@@ -28,7 +28,8 @@ class SsurgeonEdit:
         self.language = language
 
 def send_ssurgeon_request(request):
-    return send_request(request, SsurgeonResponse, SSURGEON_JAVA)
+    # TODO: undo $CLASSPATH when CoreNLP is released
+    return send_request(request, SsurgeonResponse, SSURGEON_JAVA, classpath="$CLASSPATH")
 
 def build_request(doc, ssurgeon_edits):
     request = SsurgeonRequest()
