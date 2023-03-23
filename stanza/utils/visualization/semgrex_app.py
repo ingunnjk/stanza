@@ -180,7 +180,7 @@ def run_semgrex_process(
                     for s in html_strings:
                         s_no_overflow = edit_html_overflow(s)
                         components.html(
-                            s_no_overflow, height=200, width=1000, scrolling=True
+                            s_no_overflow, height=300, width=1000, scrolling=True
                         )
                     if show_success:
                         if len(html_strings) == 1:
@@ -195,6 +195,19 @@ def run_semgrex_process(
                 st.error(
                     "Your text input or your provided Semgrex queries are incorrect. Please try again."
                 )
+
+
+def display_ssurgeon_with_semgrex(doc, semgrex_queries, lang_code, ssurgeon_queries, clicked):
+    "Visualize the ssurgeon with semgrex included"
+    if clicked:
+        ssurgeon_response = process_doc_one_operation(doc, semgrex_queries, ssurgeon_queries)
+        updated_doc = convert_response_to_doc(doc, ssurgeon_response)
+        semgrexified_html_strings = ssv.generate_edited_deprel_semgrex_included(edited_doc=updated_doc, queries=semgrex_queries, lang_code=lang_code)
+        for html_string in semgrexified_html_strings:
+            s_no_overflow = edit_html_overflow(html_string)
+            components.html(
+                s_no_overflow, height=200, width=1000, scrolling=True
+            )
 
 
 def main():
@@ -301,6 +314,7 @@ def main():
                 ssurgeon_queries = [ssurgeon_input_queries]
                 html_strings = ssv.visualize_edited_deprel_adjusted_str_input(input_txt, semgrex_queries, ssurgeon_queries)
                 doc = CoNLL.conll2doc(input_str=input_txt)
+
                 string_txt = " ".join([word.text for sentence in doc.sentences for word in sentence.words])
 
                 html_string = (
@@ -315,7 +329,7 @@ def main():
 
                 if len(html_strings) == 0:
                     st.write("No Semgrex match hits!")
-
+                # display_ssurgeon_with_semgrex(doc=doc, lang_code="en", ssurgeon_queries=ssurgeon_queries, clicked=clicked, semgrex_queries=semgrex_queries)
                 for s in html_strings:
                     html_string = (
                         "<h3>Edited deprel visualization:</h3>"

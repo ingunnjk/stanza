@@ -18,6 +18,10 @@ def generate_edited_deprel_unadjusted(edited_doc, lang_code, visualize_xpos):
     return sv.get_sentences_html(doc=edited_doc, language=lang_code, visualize_xpos=visualize_xpos)
 
 
+def generate_edited_deprel_semgrex_included(edited_doc, queries, lang_code, visualize_xpos=False):
+    return sv.visualize_search_doc(edited_doc, semgrex_queries=queries, lang_code=lang_code, visualize_xpos=visualize_xpos)
+
+
 def visualize_edited_deprel_adjusted_str_input(input_str, semgrex_query, ssurgeon_query, lang_code="en", visualize_xpos=False, render=False):
     """
     Visualizes the edited side of the ssurgeon edit
@@ -29,6 +33,7 @@ def visualize_edited_deprel_adjusted_str_input(input_str, semgrex_query, ssurgeo
     doc = CoNLL.conll2doc(input_str=input_str)
     ssurgeon_response = process_doc_one_operation(doc, semgrex_query, ssurgeon_query)
     updated_doc = convert_response_to_doc(doc, ssurgeon_response)
+    # html_strings = generate_edited_deprel_semgrex_included(edited_doc=updated_doc, queries=semgrex_query, lang_code=lang_code, visualize_xpos=visualize_xpos)
     html_strings = generate_edited_deprel_unadjusted(updated_doc, lang_code, visualize_xpos=visualize_xpos)
     edited_html_strings = []
     for i in range(len(html_strings)):
@@ -37,8 +42,9 @@ def visualize_edited_deprel_adjusted_str_input(input_str, semgrex_query, ssurgeo
 
     if render:
         sv.render_html_strings(edited_html_strings)
-
+        # sv.render_html_strings(html_strings)
     return edited_html_strings
+    # return html_strings
 
 # SAMPLE_DOC = """
 # # sent_id = 271
