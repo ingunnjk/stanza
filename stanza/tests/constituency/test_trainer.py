@@ -397,6 +397,11 @@ class TestTrainer:
         assert results[1].constituents[-1].value == test_tree[1]
         assert results[1].constituents[-2].value == test_tree[1].children[0]
 
+    def test_restart_dead_neurons(self, wordvec_pretrain_file):
+        with tempfile.TemporaryDirectory(dir=TEST_WORKING_DIR) as tmpdirname:
+            args = ['--restart_dead_neurons']
+            self.run_train_test(wordvec_pretrain_file, tmpdirname, extra_args=args)
+
     def bert_weights_allclose(self, bert_model, parser_model):
         """
         Return True if all bert weights are close, False otherwise
