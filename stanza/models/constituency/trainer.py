@@ -760,11 +760,12 @@ def restart_dead_neurons(trainer):
         if not param.requires_grad or name.startswith("bert_model."):
             continue
 
-        dead = param.abs() < 0.000001
+        not_dead = param.abs() > 0.000001
         variance = max(param.var() / 10, 0.001)
         restart = torch.randn(param.shape, device=param.device)
         restart = restart * (variance ** 0.5)
-        param[dead] = restart
+        restart[not_dead] = 0.0
+        param = param + restart
 
 def iterate_training(args, trainer, train_trees, train_sequences, transitions, dev_trees, silver_trees, silver_sequences, foundation_cache, model_save_each_filename, evaluator):
     """
