@@ -755,6 +755,10 @@ def update_bert_learning_rate(args, optimizer, epochs_trained):
             if param_group['lr'] != old_lr:
                 logger.info("Setting %s finetuning rate from %f to %f", param_group['param_group_name'], old_lr, param_group['lr'])
 
+def restart_dead_neurons(trainer):
+    # TODO
+    pass
+
 def iterate_training(args, trainer, train_trees, train_sequences, transitions, dev_trees, silver_trees, silver_sequences, foundation_cache, model_save_each_filename, evaluator):
     """
     Given an initialized model, a processed dataset, and a secondary dev dataset, train the model
@@ -838,6 +842,9 @@ def iterate_training(args, trainer, train_trees, train_sequences, transitions, d
         leftover_silver_data, epoch_silver_data = next_epoch_data(leftover_silver_data, silver_data, args['silver_epoch_size'])
         epoch_data = epoch_data + epoch_silver_data
         epoch_data.sort(key=lambda x: len(x[1]))
+
+        if args['restart_dead_neurons']:
+            restart_dead_neurons(trainer)
 
         epoch_stats = train_model_one_epoch(trainer.epochs_trained, trainer, transition_tensors, process_outputs, model_loss_function, epoch_data, oracle, args)
 

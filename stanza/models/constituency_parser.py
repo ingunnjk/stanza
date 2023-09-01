@@ -608,6 +608,8 @@ def build_argparse():
     # output layers to see if that makes up for the difference in score.
     parser.add_argument('--maxout_k', default=None, type=int, help="Use maxout layers instead of a nonlinearity for the output layers")
 
+    parser.add_argument('--restart_dead_neurons', default=False, action='store_true', help='Before each epoch, restart dead neurons')
+
     parser.add_argument('--use_silver_words', default=True, dest='use_silver_words', action='store_true', help="Train/don't train word vectors for words only in the silver dataset")
     parser.add_argument('--no_use_silver_words', default=True, dest='use_silver_words', action='store_false', help="Train/don't train word vectors for words only in the silver dataset")
     parser.add_argument('--rare_word_unknown_frequency', default=0.02, type=float, help='How often to replace a rare word with UNK when training')
