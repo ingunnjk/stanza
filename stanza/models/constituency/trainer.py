@@ -756,8 +756,15 @@ def update_bert_learning_rate(args, optimizer, epochs_trained):
                 logger.info("Setting %s finetuning rate from %f to %f", param_group['param_group_name'], old_lr, param_group['lr'])
 
 def restart_dead_neurons(trainer):
-    # TODO
-    pass
+    for name, param in trainer.model.named_parameters():
+        if not param.requires_grad or name.startswith("bert_model."):
+            continue
+
+        dead = param.abs() < 0.000001
+        variance = max(param.var() / 10, 0.001)
+        restart = torch.randn(param.shape, device=param.device)
+        restart = restart * (variance ** 0.5)
+        param[dead] = restart
 
 def iterate_training(args, trainer, train_trees, train_sequences, transitions, dev_trees, silver_trees, silver_sequences, foundation_cache, model_save_each_filename, evaluator):
     """
