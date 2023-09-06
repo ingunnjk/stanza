@@ -761,7 +761,7 @@ def restart_dead_neurons(trainer):
             continue
 
         not_dead = param.abs() > 0.000001
-        variance = max(param.var() / 10, 0.001)
+        variance = max(param.var() / 100, 0.001)
         restart = torch.randn(param.shape, device=param.device)
         restart = restart * (variance ** 0.5)
         restart[not_dead] = 0.0
