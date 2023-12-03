@@ -82,6 +82,8 @@ def build_argparse():
     parser.add_argument('--no_bert_finetune', dest='bert_finetune', action='store_false', help="Don't finetune the bert (or other transformer)")
     parser.add_argument('--bert_learning_rate', default=1.0, type=float, help='Scale the learning rate for transformer finetuning by this much')
 
+    parser.add_argument('--peft', default=False, action="store_true", help="perform peft during training of the Bert model")
+
     parser.add_argument('--no_pretrain', dest='pretrain', action='store_false', help="Turn off pretrained embeddings.")
     parser.add_argument('--share_hid', action='store_true', help="Share hidden representations for UPOS, XPOS and UFeats.")
     parser.set_defaults(share_hid=False)

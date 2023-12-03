@@ -13,6 +13,8 @@ from stanza.models.common.foundation_cache import NoTransformerFoundationCache
 from stanza.models.pos.model import Tagger
 from stanza.models.pos.vocab import MultiVocab
 
+from peft import LoraConfig, get_peft_model, get_peft_model_state_dict, set_peft_model_state_dict
+
 logger = logging.getLogger('stanza')
 
 def unpack_batch(batch, device):
@@ -36,6 +38,26 @@ class Trainer(BaseTrainer):
             self.args = args
             self.vocab = vocab
             self.model = Tagger(args, vocab, emb_matrix=pretrain.emb if pretrain is not None else None, share_hid=args['share_hid'], foundation_cache=foundation_cache)
+
+        # our standard peft config
+        self.__peft_config = LoraConfig(inference_mode=False,
+                                        r=32,
+                                        target_modules=["query", "value",
+                                                        "output.dense", "intermediate.dense"],
+                                        lora_alpha=128,
+                                        lora_dropout=0.1,
+                                        modules_to_save=[ "pooler" ],
+                                        bias="none")
+
+        # PEFT the model, if needed
+        if self.args["peft"] and self.args["bert_model"]:
+            # peft the lovely model
+            self.model.bert_model = get_peft_model(self.model.bert_model, self.__peft_config)
+            # because we will save this seperately ourselves within the trainer as PEFT
+            # weight loading is a tad different
+            self.model.unsaved_modules += ["bert_model"]
+            self.model.train()
+
         self.model = self.model.to(device)
         self.optimizer = utils.get_optimizer(self.args['optim'], self.model, self.args['lr'], betas=(0.9, self.args['beta2']), eps=1e-6, weight_decay=self.args.get('initial_weight_decay', None), bert_learning_rate=self.args.get('bert_learning_rate', 0.0))
 
@@ -91,6 +113,10 @@ class Trainer(BaseTrainer):
                 'vocab': self.vocab.state_dict(),
                 'config': self.args
                 }
+
+        if self.args["peft"]:
+            savedict["bert_lora"] = get_peft_model_state_dict(self.model.bert_model)
+
         try:
             torch.save(params, filename, _use_new_zipfile_serialization=False)
             logger.info("Model saved to {}".format(filename))
@@ -111,8 +137,12 @@ class Trainer(BaseTrainer):
             raise
         self.args = checkpoint['config']
         if args is not None: self.args.update(args)
+        lora_weights = checkpoint.get('bert_lora')
+        if lora_weights:
+            self.args["peft"] = True
         if 'bert_model' not in self.args:
             self.args['bert_model'] = None
+
         self.vocab = MultiVocab.load_state_dict(checkpoint['vocab'])
         # load model
         emb_matrix = None
@@ -123,3 +153,11 @@ class Trainer(BaseTrainer):
             foundation_cache = NoTransformerFoundationCache(foundation_cache)
         self.model = Tagger(self.args, self.vocab, emb_matrix=emb_matrix, share_hid=self.args['share_hid'], foundation_cache=foundation_cache)
         self.model.load_state_dict(checkpoint['model'], strict=False)
+
+        # load lora weights, which is special
+        if lora_weights:
+            self.model.bert_model = get_peft_model(self.model.bert_model, self.__peft_config)
+            self.model.unsaved_modules += ["bert_model"]
+            self.model.set_peft_model_state_dict(self.model.bert_model, lora_weights)
+
+
