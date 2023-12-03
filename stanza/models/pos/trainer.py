@@ -51,6 +51,8 @@ class Trainer(BaseTrainer):
 
         # PEFT the model, if needed
         if self.args["peft"] and self.args["bert_model"]:
+            # fine tune the bert
+            self.args["bert_finetune"] = True
             # peft the lovely model
             self.model.bert_model = get_peft_model(self.model.bert_model, self.__peft_config)
             # because we will save this seperately ourselves within the trainer as PEFT
@@ -81,6 +83,7 @@ class Trainer(BaseTrainer):
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args['max_grad_norm'])
+
         self.optimizer.step()
         return loss_val
 
