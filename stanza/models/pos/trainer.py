@@ -115,7 +115,7 @@ class Trainer(BaseTrainer):
                 }
 
         if self.args["peft"]:
-            savedict["bert_lora"] = get_peft_model_state_dict(self.model.bert_model)
+            params["bert_lora"] = get_peft_model_state_dict(self.model.bert_model)
 
         try:
             torch.save(params, filename, _use_new_zipfile_serialization=False)
