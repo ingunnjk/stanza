@@ -41,10 +41,10 @@ class Trainer(BaseTrainer):
 
         # our standard peft config
         self.__peft_config = LoraConfig(inference_mode=False,
-                                        r=16,
+                                        r=8,
                                         target_modules=["query", "value",
                                                         "output.dense", "intermediate.dense"],
-                                        lora_alpha=32,
+                                        lora_alpha=16,
                                         lora_dropout=0.1,
                                         modules_to_save=[ "pooler" ],
                                         bias="none")
