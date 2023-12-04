@@ -160,7 +160,7 @@ class Trainer(BaseTrainer):
 
         # load lora weights, which is special
         if lora_weights:
-            self.model.bert_model = get_peft_model(self.model.bert_model, PEFT_CONFIG)
+            self.model.bert_model = inject_adapter_in_model(PEFT_CONFIG, self.model.bert_model)
             self.model.unsaved_modules += ["bert_model"]
             set_peft_model_state_dict(self.model.bert_model, lora_weights)
 
