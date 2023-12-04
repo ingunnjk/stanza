@@ -194,6 +194,7 @@ class Tagger(nn.Module):
             processed_bert = extract_bert_embeddings(self.args['bert_model'], self.bert_tokenizer, self.bert_model, text, device, keep_endpoints=False,
                                                      num_layers=self.bert_layer_mix.in_features if self.bert_layer_mix is not None else None,
                                                      detach=not self.args.get('bert_finetune', False))
+            breakpoint()
 
             if self.bert_layer_mix is not None:
                 # add the average so that the default behavior is to
