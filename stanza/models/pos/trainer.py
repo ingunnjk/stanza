@@ -17,6 +17,15 @@ from peft import LoraConfig, get_peft_model, get_peft_model_state_dict, set_peft
 
 logger = logging.getLogger('stanza')
 
+# our standard peft config
+PEFT_CONFIG = LoraConfig(inference_mode=False,
+                         r=16,
+                         target_modules=["query", "value",
+                                         "output.dense", "intermediate.dense"],
+                         lora_alpha=32,
+                         lora_dropout=0.1,
+                         modules_to_save=[ "pooler" ],
+                         bias="none")
 def unpack_batch(batch, device):
     """ Unpack a batch from the data loader. """
     inputs = [b.to(device) if b is not None else None for b in batch[:8]]
@@ -39,22 +48,13 @@ class Trainer(BaseTrainer):
             self.vocab = vocab
             self.model = Tagger(args, vocab, emb_matrix=pretrain.emb if pretrain is not None else None, share_hid=args['share_hid'], foundation_cache=foundation_cache)
 
-        # our standard peft config
-        self.__peft_config = LoraConfig(inference_mode=False,
-                                        r=16,
-                                        target_modules=["query", "value",
-                                                        "output.dense", "intermediate.dense"],
-                                        lora_alpha=32,
-                                        lora_dropout=0.1,
-                                        modules_to_save=[ "pooler" ],
-                                        bias="none")
 
         # PEFT the model, if needed
         if self.args["peft"] and self.args["bert_model"]:
             # fine tune the bert
             self.args["bert_finetune"] = True
             # peft the lovely model
-            self.model.bert_model = get_peft_model(self.model.bert_model, self.__peft_config)
+            self.model.bert_model = get_peft_model(self.model.bert_model, PEFT_CONFIG)
             # because we will save this seperately ourselves within the trainer as PEFT
             # weight loading is a tad different
             self.model.unsaved_modules += ["bert_model"]
@@ -159,7 +159,7 @@ class Trainer(BaseTrainer):
 
         # load lora weights, which is special
         if lora_weights:
-            self.model.bert_model = get_peft_model(self.model.bert_model, self.__peft_config)
+            self.model.bert_model = get_peft_model(self.model.bert_model, PEFT_CONFIG)
             self.model.unsaved_modules += ["bert_model"]
             self.model.set_peft_model_state_dict(self.model.bert_model, lora_weights)
 
