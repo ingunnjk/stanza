@@ -161,6 +161,6 @@ class Trainer(BaseTrainer):
         if lora_weights:
             self.model.bert_model = get_peft_model(self.model.bert_model, PEFT_CONFIG)
             self.model.unsaved_modules += ["bert_model"]
-            self.model.set_peft_model_state_dict(self.model.bert_model, lora_weights)
+            set_peft_model_state_dict(self.model.bert_model, lora_weights)
 
 
