@@ -54,7 +54,7 @@ class Trainer(BaseTrainer):
             # fine tune the bert
             self.args["bert_finetune"] = True
             # peft the lovely model
-            self.model.bert_model = inject_adapter_in_model(self.model.bert_model, PEFT_CONFIG)
+            self.model.bert_model = inject_adapter_in_model(PEFT_CONFIG, self.model.bert_model)
             # because we will save this seperately ourselves within the trainer as PEFT
             # weight loading is a tad different
             self.model.unsaved_modules += ["bert_model"]
