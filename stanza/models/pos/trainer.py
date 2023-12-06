@@ -24,7 +24,6 @@ PEFT_CONFIG = LoraConfig(inference_mode=False,
                                          "output.dense", "intermediate.dense"],
                          lora_alpha=32,
                          lora_dropout=0.1,
-                         modules_to_save=[ "pooler" ],
                          bias="none")
 def unpack_batch(batch, device):
     """ Unpack a batch from the data loader. """
