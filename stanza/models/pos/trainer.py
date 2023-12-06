@@ -7,13 +7,14 @@ import logging
 import torch
 from torch import nn
 
+import transformers
 from stanza.models.common.trainer import Trainer as BaseTrainer
 from stanza.models.common import utils, loss
 from stanza.models.common.foundation_cache import NoTransformerFoundationCache
 from stanza.models.pos.model import Tagger
 from stanza.models.pos.vocab import MultiVocab
 
-from peft import LoraConfig, inject_adapter_in_model, get_peft_model_state_dict, set_peft_model_state_dict
+from peft import LoraConfig, get_peft_model, get_peft_model_state_dict, set_peft_model_state_dict
 
 logger = logging.getLogger('stanza')
 
@@ -53,7 +54,7 @@ class Trainer(BaseTrainer):
             # fine tune the bert
             self.args["bert_finetune"] = True
             # peft the lovely model
-            self.model.bert_model = inject_adapter_in_model(PEFT_CONFIG, self.model.bert_model)
+            self.model.bert_model = get_peft_model(self.model.bert_model, PEFT_CONFIG)
             # because we will save this seperately ourselves within the trainer as PEFT
             # weight loading is a tad different
             self.model.unsaved_modules += ["bert_model"]
@@ -62,6 +63,16 @@ class Trainer(BaseTrainer):
 
         self.model = self.model.to(device)
         self.optimizer = utils.get_optimizer(self.args['optim'], self.model, self.args['lr'], betas=(0.9, self.args['beta2']), eps=1e-6, weight_decay=self.args.get('initial_weight_decay', None), bert_learning_rate=self.args.get('bert_learning_rate', 0.0), is_peft=self.args.get("peft", False))
+
+        self.sceduler = None
+
+        if self.args["bert_finetune"]:
+            warmup_scheduler = transformers.get_linear_schedule_with_warmup(
+                self.optimizers["bert_optimizer"],
+                start_finetuning, n_docs * self.config.train_epochs - start_finetuning)
+            self.schedulers["bert_scheduler"] = warmup_scheduler
+
+
 
     def update(self, batch, eval=False):
         device = next(self.model.parameters()).device
@@ -159,7 +170,7 @@ class Trainer(BaseTrainer):
 
         # load lora weights, which is special
         if lora_weights:
-            self.model.bert_model = inject_adapter_in_model(PEFT_CONFIG, self.model.bert_model)
+            self.model.bert_model = get_peft_model(self.model.bert_model, PEFT_CONFIG)
             self.model.unsaved_modules += ["bert_model"]
             set_peft_model_state_dict(self.model.bert_model, lora_weights)
 
