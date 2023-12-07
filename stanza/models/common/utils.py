@@ -235,7 +235,7 @@ def get_split_optimizer(name, model, lr, betas=(0.9, 0.999), eps=1e-8, momentum=
     else:
         # because PEFT handles what to hand to an optimizer, we don't want to touch that
         trainable_params = [v for n, v in model.bert_model.named_parameters() if v.requires_grad]
-        bert_parameters = [{'param_group_name': 'bert', 'params': trainable_params, 'lr': lr * bert_learning_rate})]
+        bert_parameters = [{'param_group_name': 'bert', 'params': trainable_params, 'lr': lr * bert_learning_rate}]
 
     extra_args = {}
     if weight_decay is not None:
