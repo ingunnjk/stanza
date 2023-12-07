@@ -21,8 +21,7 @@ logger = logging.getLogger('stanza')
 # our standard peft config
 PEFT_CONFIG = LoraConfig(inference_mode=False,
                          r=8,
-                         target_modules=["query", "value",
-                                         "output.dense", "intermediate.dense"],
+                         target_modules=["query", "value", "output.dense"],
                          lora_alpha=16,
                          lora_dropout=0.1,
                          bias="none")
