@@ -93,7 +93,7 @@ class Trainer(BaseTrainer):
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args['max_grad_norm'])
 
-        [i.step() for i in self.optimizers.value()]
+        [i.step() for i in self.optimizers.values()]
         scheduler = self.schedulers.get("bert_scheduler")
         if scheduler:
             scheduler.step()
