@@ -164,7 +164,7 @@ def harmonic_mean(a, weights=None):
             return sum(weights) / sum(w/x for x, w in zip(a, weights))
 
 # torch utils
-def dispatch_optimizer(name, parameters, lr=None, betas=None, eps=None, **kwargs):
+def dispatch_optimizer(name, parameters, lr=None, betas=None, eps=None, **extra_args):
     if name == 'amsgrad':
         return torch.optim.Adam(parameters, amsgrad=True, lr=lr, betas=betas, eps=eps, **extra_args)
     elif name == 'amsgradw':
