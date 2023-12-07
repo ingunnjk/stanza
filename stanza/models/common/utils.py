@@ -164,7 +164,7 @@ def harmonic_mean(a, weights=None):
             return sum(weights) / sum(w/x for x, w in zip(a, weights))
 
 # torch utils
-def dispatch_optimizer(name, parameters, betas=None, eps=None, **kwargs):
+def dispatch_optimizer(name, parameters, lr=None, betas=None, eps=None, **kwargs):
     if name == 'amsgrad':
         return torch.optim.Adam(parameters, amsgrad=True, lr=lr, betas=betas, eps=eps, **extra_args)
     elif name == 'amsgradw':
@@ -215,7 +215,7 @@ def get_optimizer(name, model, lr, betas=(0.9, 0.999), eps=1e-8, momentum=0, wei
     if weight_decay is not None:
         extra_args["weight_decay"] = weight_decay
 
-    return dispatch_optimizer(name, parameters, betas=betas, eps=eps, **extra_args)
+    return dispatch_optimizer(name, parameters, lr=lr, betas=betas, eps=eps, **extra_args)
 
 def get_split_optimizer(name, model, lr, betas=(0.9, 0.999), eps=1e-8, momentum=0, weight_decay=None, bert_learning_rate=0.0, charlm_learning_rate=0.0, is_peft=False):
     """Same as `get_optimizer`, but splits the optimizer for Bert into a seperate optimizer"""
@@ -241,8 +241,8 @@ def get_split_optimizer(name, model, lr, betas=(0.9, 0.999), eps=1e-8, momentum=
     if weight_decay is not None:
         extra_args["weight_decay"] = weight_decay
 
-    return {"general_optimizer": dispatch_optimizer(name, parameters, betas=betas, eps=eps, **extra_args),
-            "bert_optimizer": dispatch_optimizer(name, bert_parameters, betas=betas, eps=eps, **extra_args)}
+    return {"general_optimizer": dispatch_optimizer(name, parameters, lr=lr, betas=betas, eps=eps, **extra_args),
+            "bert_optimizer": dispatch_optimizer(name, bert_parameters, lr=lr, betas=betas, eps=eps, **extra_args)}
 
 
 def change_lr(optimizer, new_lr):
