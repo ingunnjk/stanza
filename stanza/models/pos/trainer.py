@@ -24,6 +24,7 @@ PEFT_CONFIG = LoraConfig(inference_mode=False,
                          target_modules=["query", "value", "output.dense"],
                          lora_alpha=16,
                          lora_dropout=0.1,
+                         modules_to_save=[],
                          bias="none")
 def unpack_batch(batch, device):
     """ Unpack a batch from the data loader. """
@@ -56,6 +57,7 @@ class Trainer(BaseTrainer):
                 # because we will save this seperately ourselves within the trainer as PEFT
                 # weight loading is a tad different
                 self.model.unsaved_modules += ["bert_model"]
+                self.model.bert_model.gradient_checkpointing_enable()
                 self.model.train()
                 self.model.bert_model.train()
 
