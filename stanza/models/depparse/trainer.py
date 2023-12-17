@@ -2,6 +2,7 @@
 A trainer class to handle training and testing of models.
 """
 
+import copy
 import sys
 import logging
 import torch
@@ -28,7 +29,8 @@ def unpack_batch(batch, device):
 
 class Trainer(BaseTrainer):
     """ A trainer for training models. """
-    def __init__(self, args=None, vocab=None, pretrain=None, model_file=None, device=None, foundation_cache=None):
+    def __init__(self, args=None, vocab=None, pretrain=None, model_file=None, device=None, foundation_cache=None, ignore_model_config=False):
+        orig_args = copy.deepcopy(args)
         if model_file is not None:
             # load everything from file
             self.load(model_file, pretrain, args, foundation_cache)
@@ -37,6 +39,8 @@ class Trainer(BaseTrainer):
             self.args = args
             self.vocab = vocab
             self.model = Parser(args, vocab, emb_matrix=pretrain.emb if pretrain is not None else None)
+        if ignore_model_config:
+            self.args = orig_args
         self.model = self.model.to(device)
         self.optimizer = utils.get_optimizer(self.args['optim'], self.model, self.args['lr'], betas=(0.9, self.args['beta2']), eps=1e-6, bert_learning_rate=self.args.get('bert_learning_rate', 0.0))
 
