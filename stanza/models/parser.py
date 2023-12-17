@@ -95,6 +95,7 @@ def build_argparse():
     parser.add_argument('--log_step', type=int, default=20, help='Print log every k steps.')
     parser.add_argument('--save_dir', type=str, default='saved_models/depparse', help='Root dir for saving models.')
     parser.add_argument('--save_name', type=str, default="{shorthand}_{embedding}_parser.pt", help="File name to save the model")
+    parser.add_argument('--continue_from', type=str, default=None, help="File name to preload the model to continue training from")
 
     parser.add_argument('--seed', type=int, default=1234)
     utils.add_device_args(parser)
@@ -191,7 +192,11 @@ def train(args):
         wandb.run.define_metric('dev_score', summary='max')
 
     logger.info("Training parser...")
-    trainer = Trainer(args=args, vocab=vocab, pretrain=pretrain, device=args['device'])
+    if args["continue_from"]:
+        trainer = Trainer(pretrain=pretrain, model_file=args["continue_from"],
+                          device=args['device'], args=load_args)
+    else:
+        trainer = Trainer(args=args, vocab=vocab, pretrain=pretrain, device=args['device'])
 
     global_step = 0
     max_steps = args['max_steps']
