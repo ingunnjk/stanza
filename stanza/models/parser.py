@@ -193,8 +193,7 @@ def train(args):
 
     logger.info("Training parser...")
     if args["continue_from"]:
-        trainer = Trainer(pretrain=pretrain, model_file=args["continue_from"],
-                          device=args['device'], args=load_args)
+        trainer = Trainer(pretrain=pretrain, vocab=vocab, model_file=args["continue_from"], device=args['device'])
     else:
         trainer = Trainer(args=args, vocab=vocab, pretrain=pretrain, device=args['device'])
 
