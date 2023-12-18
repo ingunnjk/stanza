@@ -49,7 +49,7 @@ class Trainer(BaseTrainer):
             if args['wandb']:
                 import wandb
                 # track gradients!
-                wandb.watch(self.model)
+                wandb.watch(self.model, log_freq=4, log="all", log_graph=True)
         if ignore_model_config:
             self.args = orig_args
             self.__user_primary_optim = True
