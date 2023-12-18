@@ -43,7 +43,6 @@ def build_argparse():
     parser.add_argument('--eval_file', type=str, default=None, help='Input file for data loader.')
     parser.add_argument('--output_file', type=str, default=None, help='Output CoNLL-U file.')
     parser.add_argument('--gold_file', type=str, default=None, help='Output CoNLL-U file.')
-
     parser.add_argument('--mode', default='train', choices=['train', 'predict'])
     parser.add_argument('--lang', type=str, help='Language')
     parser.add_argument('--shorthand', type=str, help="Treebank shorthand")
@@ -77,6 +76,7 @@ def build_argparse():
     parser.add_argument('--bert_finetune', default=False, action='store_true', help='Finetune the bert (or other transformer)')
     parser.add_argument('--no_bert_finetune', dest='bert_finetune', action='store_false', help="Don't finetune the bert (or other transformer)")
     parser.add_argument('--bert_learning_rate', default=1.0, type=float, help='Scale the learning rate for transformer finetuning by this much')
+    parser.add_argument('--second_bert_learning_rate', default=1e-3, type=float, help='Secondary stage transformer finetuning learning rate scale')
 
     parser.add_argument('--no_pretrain', dest='pretrain', action='store_false', help="Turn off pretrained embeddings.")
     parser.add_argument('--no_linearization', dest='linearization', action='store_false', help="Turn off linearization term.")
@@ -84,12 +84,14 @@ def build_argparse():
 
     parser.add_argument('--sample_train', type=float, default=1.0, help='Subsample training data.')
     parser.add_argument('--optim', type=str, default='adam', help='sgd, adagrad, adam or adamax.')
+    parser.add_argument('--second_optim', type=str, default='madgrad', help='sgd, adagrad, adam or adamax.')
     parser.add_argument('--lr', type=float, default=3e-3, help='Learning rate')
+    parser.add_argument('--second_lr', type=float, default=3e-4, help='Secondary stage learning rate')
     parser.add_argument('--beta2', type=float, default=0.95)
 
     parser.add_argument('--max_steps', type=int, default=50000)
     parser.add_argument('--eval_interval', type=int, default=100)
-    parser.add_argument('--max_steps_before_stop', type=int, default=3000)
+    parser.add_argument('--max_steps_before_stop', type=int, default=1000)
     parser.add_argument('--batch_size', type=int, default=5000)
     parser.add_argument('--max_grad_norm', type=float, default=1.0, help='Gradient clipping.')
     parser.add_argument('--log_step', type=int, default=20, help='Print log every k steps.')
@@ -251,11 +253,12 @@ def train(args):
                 dev_score_history += [dev_score]
 
             if global_step - last_best_step >= args['max_steps_before_stop']:
-                if not using_amsgrad:
-                    logger.info("Switching to AMSGrad")
-                    last_best_step = global_step
+                if not using_amsgrad and args['second_optim'] is not None:
+                    logger.info("Switching to second optimizer: {}".format(args['second_optim']))
+                    trainer.load(model_file, pretrain, args, None)
+                    trainer.switch()
+                    logger.info('Reloading best model to continue from current local optimum')
                     using_amsgrad = True
-                    trainer.optimizer = optim.Adam(trainer.model.parameters(), amsgrad=True, lr=args['lr'], betas=(.9, args['beta2']), eps=1e-6)
                 else:
                     do_break = True
                     break
