@@ -46,6 +46,9 @@ class Trainer(BaseTrainer):
             self.vocab = vocab
             self.model = Parser(args, vocab, emb_matrix=pretrain.emb if pretrain is not None else None)
             self.__primary_stage = True
+            if args['wandb']:
+                # track gradients!
+                args['wandb'].watch(self.model)
         if ignore_model_config:
             self.args = orig_args
             self.__primary_stage = True
