@@ -64,6 +64,11 @@ class Trainer(BaseTrainer):
         else:
             return self.secondary_optimizer
 
+    def switch(self):
+        # should we allow the client of the Trainer to switch back to primary stage?
+        # as in, I feel like it should be a one-way street.
+        self.__primary_stage = False
+
     def update(self, batch, eval=False):
         device = next(self.model.parameters()).device
         inputs, orig_idx, word_orig_idx, sentlens, wordlens, text = unpack_batch(batch, device)
