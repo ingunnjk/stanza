@@ -36,7 +36,7 @@ class Trainer(BaseTrainer):
         # during this time, we (optionally) use a different set of optimizers than that during "primary stage".
         #
         # Regardless, we use TWO SETS of optimizers; once primary converges, we switch to secondary
-        self.__primary_stage = False
+        self.__user_primary_optim = False
         if model_file is not None:
             # load everything from file
             self.load(model_file, pretrain, args, foundation_cache)
@@ -45,13 +45,13 @@ class Trainer(BaseTrainer):
             self.args = args
             self.vocab = vocab
             self.model = Parser(args, vocab, emb_matrix=pretrain.emb if pretrain is not None else None)
-            self.__primary_stage = True
+            self.__user_primary_optim = True
             if args['wandb']:
                 # track gradients!
                 args['wandb'].watch(self.model)
         if ignore_model_config:
             self.args = orig_args
-            self.__primary_stage = True
+            self.__user_primary_optim = True
         self.model = self.model.to(device)
         self.primary_optimizer = utils.get_optimizer(self.args['optim'], self.model, self.args['lr'], betas=(0.9, self.args['beta2']), eps=1e-6, bert_learning_rate=self.args.get('bert_learning_rate', 0.0))
         if self.args['second_optim'] != None:
@@ -59,15 +59,10 @@ class Trainer(BaseTrainer):
 
     @property
     def optimizer(self):
-        if self.__primary_stage:
+        if self.__user_primary_optim:
             return self.primary_optimizer
         else:
             return self.secondary_optimizer
-
-    def switch(self):
-        # should we allow the client of the Trainer to switch back to primary stage?
-        # as in, I feel like it should be a one-way street.
-        self.__primary_stage = False
 
     def update(self, batch, eval=False):
         device = next(self.model.parameters()).device

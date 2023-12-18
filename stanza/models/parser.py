@@ -255,8 +255,9 @@ def train(args):
             if global_step - last_best_step >= args['max_steps_before_stop']:
                 if not using_amsgrad and args['second_optim'] is not None:
                     logger.info("Switching to second optimizer: {}".format(args['second_optim']))
-                    trainer.load(model_file, pretrain, args, None)
-                    trainer.switch()
+                    # if the loader gets a model file, it uses secondary optimizer
+                    trainer = Trainer(args=args, vocab=trainer.vocab, pretrain=pretrain,
+                                      model_file=model_file, device=args['device'])
                     logger.info('Reloading best model to continue from current local optimum')
                     using_amsgrad = True
                     last_best_step = global_step
