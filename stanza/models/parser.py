@@ -259,6 +259,7 @@ def train(args):
                     trainer.switch()
                     logger.info('Reloading best model to continue from current local optimum')
                     using_amsgrad = True
+                    last_best_step = global_step
                 else:
                     do_break = True
                     break
