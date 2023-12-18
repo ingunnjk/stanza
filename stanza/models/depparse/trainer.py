@@ -47,8 +47,9 @@ class Trainer(BaseTrainer):
             self.model = Parser(args, vocab, emb_matrix=pretrain.emb if pretrain is not None else None)
             self.__user_primary_optim = True
             if args['wandb']:
+                import wandb
                 # track gradients!
-                args['wandb'].watch(self.model)
+                wandb.watch(self.model)
         if ignore_model_config:
             self.args = orig_args
             self.__user_primary_optim = True
