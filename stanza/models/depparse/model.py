@@ -73,6 +73,7 @@ class Parser(nn.Module):
 
         # TODO: refactor with POS
         if self.args['bert_model']:
+            self.highway = nn.Linear(self.bert_model.config.hidden_size, self.args["hidden_dim"]*2, bias=False)
             if args.get('bert_hidden_layers', False):
                 # The average will be offset by 1/N so that the default zeros
                 # repressents an average of the N layers
@@ -178,7 +179,6 @@ class Parser(nn.Module):
         if self.bert_model is not None:
             # for passing bert embeddings near the end of the model to prevent gradients disapperance
             device = next(self.parameters()).device
-            self.highway = nn.Linear(self.bert_model.config.hidden_size, self.args["hidden_dim"]*2).to(device)
             processed_bert = extract_bert_embeddings(self.args['bert_model'], self.bert_tokenizer, self.bert_model, text, device, keep_endpoints=True,
                                                      num_layers=self.bert_layer_mix.in_features if self.bert_layer_mix is not None else None,
                                                      detach=not self.args.get('bert_finetune', False))
