@@ -73,7 +73,6 @@ class Parser(nn.Module):
 
         # TODO: refactor with POS
         if self.args['bert_model']:
-            self.highway = nn.Linear(self.bert_model.config.hidden_size, self.args["hidden_dim"]*2, bias=False)
             if args.get('bert_hidden_layers', False):
                 # The average will be offset by 1/N so that the default zeros
                 # repressents an average of the N layers
@@ -94,6 +93,7 @@ class Parser(nn.Module):
                 add_unsaved_module('bert_model', bert_model)
                 add_unsaved_module('bert_tokenizer', bert_tokenizer)
             input_size += bert_model.config.hidden_size
+            self.highway = nn.Linear(self.bert_model.config.hidden_size, self.args["hidden_dim"]*2, bias=False)
         else:
             self.bert_model = None
             self.bert_tokenizer = None
