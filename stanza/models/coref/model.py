@@ -415,7 +415,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
             running_s_loss = 0.0
             random.shuffle(docs_ids)
             pbar = tqdm(docs_ids, unit="docs", ncols=0)
-            for doc_id in pbar:
+            for doc_indx, doc_id in enumerate(pbar):
                 doc = docs[doc_id]
 
                 for optim in self.optimizers.values():
@@ -436,6 +436,12 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
                 running_c_loss += c_loss.item()
                 running_s_loss += s_loss.item()
 
+                # log every 50 docs
+                if log and doc_indx % 50 == 0:
+                    wandb.log({'train_c_loss': c_loss.item(),
+                               'train_s_loss': s_loss.item()})
+
+
                 del c_loss, s_loss
 
                 for optim in self.optimizers.values():
@@ -454,9 +460,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
             scores = self.evaluate()
             prev_best_f1 = best_f1
             if log:
-                wandb.log({'train_c_loss': running_c_loss,
-                           'train_s_loss': running_s_loss,
-                           'dev_score': scores[1]})
+                wandb.log({'dev_score': scores[1]})
 
             if best_f1 is None or scores[1] > best_f1:
 

@@ -131,7 +131,7 @@ if __name__ == "__main__":
         if args.wandb:
             import wandb
             wandb_name = args.wandb_name if args.wandb_name else f"wl_coref_{args.experiment}"
-            wandb.init(name=wandb_name, config=dataclasses.asdict(config))
+            wandb.init(name=wandb_name, config=dataclasses.asdict(config), project="stanza")
             wandb.run.define_metric('train_c_loss', summary='min')
             wandb.run.define_metric('train_s_loss', summary='min')
             wandb.run.define_metric('dev_score', summary='max')
