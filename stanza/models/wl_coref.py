@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # if wandb, generate wandb configuration 
     if args.mode == "train":
         if args.wandb:
-            wandb_name = args['wandb_name'] if args['wandb_name'] else f"wl_coref_{args.experiment}"
+            wandb_name = args.wandb_name if args.wandb_name else f"wl_coref_{args.experiment}"
             wandb.init(name=wandb_name, config=dataclasses.asdict(config))
             wandb.run.define_metric('train_c_loss', summary='min')
             wandb.run.define_metric('train_s_loss', summary='min')
