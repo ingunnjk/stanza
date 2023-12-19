@@ -13,6 +13,7 @@ import toml
 import torch
 import transformers     # type: ignore
 
+
 from stanza.models.coref import bert, conll, utils
 from stanza.models.coref.anaphoricity_scorer import AnaphoricityScorer
 from stanza.models.coref.cluster_checker import ClusterChecker
@@ -388,10 +389,16 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
         logger.info("\n".join(lines))
 
 
-    def train(self):
+    def train(self, log=False):
         """
         Trains all the trainable blocks in the model using the config provided.
+
+        log: whether or not to log using wandb
         """
+
+        if log:
+            import wandb
+
         docs = list(self._get_docs(self.config.train_data))
         docs_ids = list(range(len(docs)))
         avg_spans = sum(len(doc["head2span"]) for doc in docs) / len(docs)
@@ -443,7 +450,13 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
             self.epochs_trained += 1
             scores = self.evaluate()
             prev_best_f1 = best_f1
+            if log:
+                wandb.log({'train_c_loss': running_c_loss,
+                           'train_s_loss': running_s_loss,
+                           'dev_score': scores[1]})
+
             if best_f1 is None or scores[1] > best_f1:
+
                 if best_f1 is None:
                     logger.info("Saving new best model: F1 %.4f", scores[1])
                 else:
