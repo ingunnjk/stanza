@@ -107,7 +107,7 @@ if __name__ == "__main__":
                            help="If set, update the save directory for writing models")
     argparser.add_argument("--log_norms", action="store_true", default=None,
                            help="If set, log all of the trainable norms each epoch.  Very noisy!")
-    argparser.add_argument('--wandb', action='store_true', help='Start a wandb session and write the results of training.  Only applies to training.  Use --wandb_name instead to specify a name')
+    argparser.add_argument('--wandb', action='store_true', help='Start a wandb session and write the results of training.  Only applies to training.  Use --wandb_name instead to specify a name', default=False)
     argparser.add_argument('--wandb_name', default=None, help='Name of a wandb session to start when training.  Will default to the dataset short name')
 
     args = argparser.parse_args()
