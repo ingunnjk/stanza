@@ -48,7 +48,7 @@ class Trainer(BaseTrainer):
             self.__user_primary_optim = True
             # initalize "highway" layer to all zeros in the beginning
             if self.args["bert_model"]:
-                self.model.highway1.weight.data.fill_(0.0)
+                self.model.highway.weight.data.fill_(0.0)
             if args['wandb']:
                 import wandb
                 # track gradients!
