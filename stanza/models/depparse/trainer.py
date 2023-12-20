@@ -46,6 +46,9 @@ class Trainer(BaseTrainer):
             self.vocab = vocab
             self.model = Parser(args, vocab, emb_matrix=pretrain.emb if pretrain is not None else None)
             self.__user_primary_optim = True
+            # initalize "highway" layer to all zeros in the beginning
+            if self.args["bert_model"]:
+                self.model.highway1.weight.data.fill_(0.0)
             if args['wandb']:
                 import wandb
                 # track gradients!
