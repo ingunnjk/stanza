@@ -93,7 +93,16 @@ class Parser(nn.Module):
                 add_unsaved_module('bert_model', bert_model)
                 add_unsaved_module('bert_tokenizer', bert_tokenizer)
             input_size += bert_model.config.hidden_size
-            self.highway = nn.Linear(self.bert_model.config.hidden_size, self.args["hidden_dim"]*2, bias=False)
+            self.highway = nn.Sequential(
+                nn.Linear(self.bert_model.config.hidden_size, self.args["hidden_dim"]),
+                nn.Linear(self.args["hidden_dim"], self.args["hidden_dim"]),
+                nn.ReLU(),
+                nn.Dropout(0.3),
+                nn.Linear(self.args["hidden_dim"], self.args["hidden_dim"]),
+                nn.ReLU(),
+                nn.Dropout(0.3),
+                nn.Linear(self.args["hidden_dim"], self.args["hidden_dim"]*2),
+            )
         else:
             self.bert_model = None
             self.bert_tokenizer = None
@@ -193,19 +202,22 @@ class Parser(nn.Module):
             processed_bert = pad_sequence(processed_bert, batch_first=True)
             inputs += [pack(processed_bert)]
 
-        lstm_inputs = torch.cat([x.data for x in inputs], 1)
-
-        lstm_inputs = self.worddrop(lstm_inputs, self.drop_replacement)
-        lstm_inputs = self.drop(lstm_inputs)
-
-        lstm_inputs = PackedSequence(lstm_inputs, inputs[0].batch_sizes)
-
-        lstm_outputs, _ = self.parserlstm(lstm_inputs, sentlens, hx=(self.parserlstm_h_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous(), self.parserlstm_c_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous()))
-        lstm_outputs, _ = pad_packed_sequence(lstm_outputs, batch_first=True)
-
         # to prevent bert gradient disapperance
         if self.args['bert_model']:
-            lstm_outputs += self.highway(processed_bert)
+            # TODO TODO this is only a test to see if we can
+            # ditch the LSTM entirely
+            lstm_outputs = self.highway(processed_bert)
+            breakpoint()
+        else:
+            lstm_inputs = torch.cat([x.data for x in inputs], 1)
+
+            lstm_inputs = self.worddrop(lstm_inputs, self.drop_replacement)
+            lstm_inputs = self.drop(lstm_inputs)
+
+            lstm_inputs = PackedSequence(lstm_inputs, inputs[0].batch_sizes)
+
+            lstm_outputs, _ = self.parserlstm(lstm_inputs, sentlens, hx=(self.parserlstm_h_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous(), self.parserlstm_c_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous()))
+            lstm_outputs, _ = pad_packed_sequence(lstm_outputs, batch_first=True)
 
         unlabeled_scores = self.unlabeled(self.drop(lstm_outputs), self.drop(lstm_outputs)).squeeze(3)
         deprel_scores = self.deprel(self.drop(lstm_outputs), self.drop(lstm_outputs))
