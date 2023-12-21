@@ -239,7 +239,6 @@ class Parser(nn.Module):
 
             lstm_outputs, _ = self.parserlstm(lstm_inputs, sentlens, hx=(self.parserlstm_h_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous(), self.parserlstm_c_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous()))
             lstm_outputs, _ = pad_packed_sequence(lstm_outputs, batch_first=True)
-        breakpoint()
 
         unlabeled_scores = self.unlabeled(self.drop(lstm_outputs), self.drop(lstm_outputs)).squeeze(3)
         deprel_scores = self.deprel(self.drop(lstm_outputs), self.drop(lstm_outputs))
