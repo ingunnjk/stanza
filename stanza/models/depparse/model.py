@@ -98,9 +98,6 @@ class Parser(nn.Module):
                 nn.Linear(self.args["hidden_dim"], self.args["hidden_dim"]),
                 nn.ReLU(),
                 nn.Dropout(0.3),
-                nn.Linear(self.args["hidden_dim"], self.args["hidden_dim"]),
-                nn.ReLU(),
-                nn.Dropout(0.3),
             )
             # note that input to this requires a .permute
             self.conv = nn.Sequential(
@@ -111,11 +108,9 @@ class Parser(nn.Module):
                 #
                 # as with all other Conv implementations we increase
                 # channel count and decrease kernel size
-                nn.Conv1d(self.args["hidden_dim"], 800, 50, padding="same"),
+                nn.Conv1d(self.args["hidden_dim"], 800, 20, padding="same"),
                 nn.ReLU(),
-                nn.Conv1d(800, 1024, 30, padding="same", dilation=4),
-                nn.ReLU(),
-                nn.Conv1d(1024, 1024, 10, padding="same", dilation=8),
+                nn.Conv1d(800, 1024, 10, padding="same", dilation=4),
                 nn.ReLU(),
                 nn.Dropout(0.3)
             )
