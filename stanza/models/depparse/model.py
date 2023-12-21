@@ -101,8 +101,25 @@ class Parser(nn.Module):
                 nn.Linear(self.args["hidden_dim"], self.args["hidden_dim"]),
                 nn.ReLU(),
                 nn.Dropout(0.3),
-                nn.Linear(self.args["hidden_dim"], self.args["hidden_dim"]*2),
             )
+            # note that input to this requires a .permute
+            self.conv = nn.Sequential(
+                # we essentially convolve over words, taking bigger
+                # dialations each time to get farther distances
+                # this is "LSTM-at-home" to hopefully propergate more
+                # gradients into the bert
+                #
+                # as with all other Conv implementations we increase
+                # channel count and decrease kernel size
+                nn.Conv1d(self.args["hidden_dim"], 800, 50, padding="same"),
+                nn.ReLU(),
+                nn.Conv1d(800, 1024, 30, padding="same", dilation=4)
+                nn.ReLU(),
+                nn.Conv1d(1024, 1024, 10, padding="same", dilation=8)
+                nn.ReLU(),
+                nn.Dropout(0.3),
+            )
+            self.projection = nn.Linear(1024, self.args["hidden_dim"]*2)
         else:
             self.bert_model = None
             self.bert_tokenizer = None
@@ -205,9 +222,13 @@ class Parser(nn.Module):
         # to prevent bert gradient disapperance
         if self.args['bert_model']:
             # TODO TODO this is only a test to see if we can
-            # ditch the LSTM entirely
+            # ditch the LSTM entirely. We just use LSTM-at-home
+            # convolution implementation above
             lstm_outputs = self.highway(processed_bert)
-            breakpoint()
+            # we permute so the words layer is last, as we are convolving
+            # over words. CNNs is N x channels x length
+            lstm_outputs = self.conv(lstm_outputs.permute(0,2,1))
+            lstm_outputs = self.projection(lstm_outputs.permute(0,2,1))
         else:
             lstm_inputs = torch.cat([x.data for x in inputs], 1)
 
@@ -218,6 +239,7 @@ class Parser(nn.Module):
 
             lstm_outputs, _ = self.parserlstm(lstm_inputs, sentlens, hx=(self.parserlstm_h_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous(), self.parserlstm_c_init.expand(2 * self.args['num_layers'], word.size(0), self.args['hidden_dim']).contiguous()))
             lstm_outputs, _ = pad_packed_sequence(lstm_outputs, batch_first=True)
+        breakpoint()
 
         unlabeled_scores = self.unlabeled(self.drop(lstm_outputs), self.drop(lstm_outputs)).squeeze(3)
         deprel_scores = self.deprel(self.drop(lstm_outputs), self.drop(lstm_outputs))
