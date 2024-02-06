@@ -550,17 +550,13 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
             if start_finetuning > 0:
                 logger.info("Will begin finetuning transformer at iteration %d", start_finetuning)
             zero_scheduler = torch.optim.lr_scheduler.ConstantLR(self.optimizers["bert_optimizer"], factor=0, total_iters=start_finetuning)
-            # because for some reason the ConstantLR scheduler is implemented
-            # to the inverse of your intution (it keeps the original LR until
-            # a certain epoch, and then MULTIPLIES the LR by 1/factor), see:
-            # https://github.com/pytorch/pytorch/blob/f3645fc38bedaa1b357d99d802728c99ee065667/torch/optim/lr_scheduler.py#L502C66-L525
             warmup_scheduler = transformers.get_linear_schedule_with_warmup(
                 self.optimizers["bert_optimizer"],
                 start_finetuning, n_docs * self.config.train_epochs - start_finetuning)
             self.schedulers["bert_scheduler"] = torch.optim.lr_scheduler.SequentialLR(
                 self.optimizers["bert_optimizer"],
                 schedulers=[zero_scheduler, warmup_scheduler],
-                milestones=[n_docs * self.config.bert_finetune_begin_epoch])
+                milestones=[start_finetuning])
 
         # Must ensure the same ordering of parameters between launches
         modules = sorted((key, value) for key, value in self.trainable.items()
