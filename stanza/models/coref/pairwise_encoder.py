@@ -70,7 +70,7 @@ class PairwiseEncoder(torch.nn.Module):
         Returns a tensor where i-th element is the speaker id of i-th word.
         """
         # speaker string -> speaker id
-        str2int = {s: i for i, s in enumerate(set(doc["speaker"]))}
+        str2int = {s: i for i, s in enumerate(set(doc.get("speaker", "speaker#1")))}
 
         # word id -> speaker id
-        return [str2int[s] for s in doc["speaker"]]
+        return [str2int[s] for s in doc.get("speaker", "speaker#1")]
