@@ -549,7 +549,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
             start_finetuning = int(n_docs * self.config.bert_finetune_begin_epoch)
             if start_finetuning > 0:
                 logger.info("Will begin finetuning transformer at iteration %d", start_finetuning)
-            zero_scheduler = torch.optim.lr_scheduler.ConstantLR(self.optimizers["bert_optimizer"], factor=0, total_iters=start_finetuning, last_epoch=0)
+            zero_scheduler = torch.optim.lr_scheduler.ConstantLR(self.optimizers["bert_optimizer"], factor=0, total_iters=start_finetuning)
             # because for some reason the ConstantLR scheduler is implemented
             # to the inverse of your intution (it keeps the original LR until
             # a certain epoch, and then MULTIPLIES the LR by 1/factor), see:
