@@ -58,7 +58,9 @@ class PairwiseEncoder(torch.nn.Module):
         distance = torch.where(distance < 5, distance - 1, log_distance + 2)
         distance = self.distance_emb(distance)
 
-        genre = torch.tensor(self.genre2int[doc["document_id"][:2]],
+        # if there is no genre information, use "wb" as the genre (which is what the
+        # Pipeline does
+        genre = torch.tensor(self.genre2int.get(doc["document_id"][:2], self.genre2int["wb"]),
                              device=self.device).expand_as(top_indices)
         genre = self.genre_emb(genre)
 
