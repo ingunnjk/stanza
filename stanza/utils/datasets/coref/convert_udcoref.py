@@ -127,7 +127,7 @@ def process_documents(docs):
                         last_ref = j[1:]
                     # at the end of a reference, if we got exxxxx, that ends
                     # a particular refereenc; otherwise, it ends the last reference
-                    elif j[-1] == ")" and j[0] == "e" and j[1:].isnumeric():
+                    elif j[-1] == ")" and j[0] == "e" and j[1:-1].isnumeric():
                         final_refs[j[:-1]].append((refdict[j[:-1]].pop(-1), indx))
                     elif j[-1] == ")" and j[0] != "e":
                         final_refs[last_ref].append((refdict[last_ref].pop(-1), indx))
@@ -174,6 +174,7 @@ def process_documents(docs):
             "document_id": doc_id,
             "cased_words": cased_words,
             "sent_id": sent_id,
+            "part_id": idx,
             # "pos": pos,
             "deprel": deprel,
             "head": heads,
@@ -209,7 +210,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 
 # docs = CoNLL.conll2multi_docs("./en_gum-corefud-dev.conllu", return_doc_ids=True)
 # docs[0][1]
