@@ -211,8 +211,6 @@ def main():
 if __name__ == '__main__':
     main()
 
-main()
-
 # docs = CoNLL.conll2multi_docs("./en_gum-corefud-dev.conllu", return_doc_ids=True)
 # docs[0][1]
 
