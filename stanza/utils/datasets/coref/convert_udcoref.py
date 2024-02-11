@@ -99,7 +99,7 @@ def process_documents(docs):
         word_clusters = defaultdict(list)
         head2span = []
         word_total = 0
-        SPANS = re.compile("(\(\w+|\w+\))")
+        SPANS = re.compile("(\(\w+|[%\w]+\))")
         for parsed_sentence in doc.sentences:
             # spans regex
             # parse the misc column, leaving on "Entity" entries
@@ -127,9 +127,9 @@ def process_documents(docs):
                         last_ref = j[1:]
                     # at the end of a reference, if we got exxxxx, that ends
                     # a particular refereenc; otherwise, it ends the last reference
-                    elif j[-1] == ")" and j[0] == "e" and j[1:-1].isnumeric():
+                    elif j[-1] == ")" and j[:-1].isnumeric():
                         final_refs[j[:-1]].append((refdict[j[:-1]].pop(-1), indx))
-                    elif j[-1] == ")" and j[0] != "e":
+                    elif j[-1] == ")":
                         final_refs[last_ref].append((refdict[last_ref].pop(-1), indx))
                         last_ref = None
             final_refs = dict(final_refs)
@@ -137,7 +137,7 @@ def process_documents(docs):
             coref_spans = []
             for k, v in final_refs.items():
                 for i in v:
-                    coref_spans.append([int(k[1:]), i[0], i[1]])
+                    coref_spans.append([int(k), i[0], i[1]])
             sentence_upos = [x.upos for x in parsed_sentence.words]
             sentence_heads = [x.head - 1 if x.head > 0 else None for x in parsed_sentence.words]
             for span in coref_spans:
@@ -186,7 +186,7 @@ def process_documents(docs):
     return processed_section
 
 SECTION_NAMES = ["train", "dev", "test"]
-SHORT_NAME = "en_gum-corefud"
+SHORT_NAME = "en_gum-ud"
 LANGUAGE = "english"
 
 def process_dataset(short_name, conllu_path, coref_output_path):
@@ -210,6 +210,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+main()
 
 # docs = CoNLL.conll2multi_docs("./en_gum-corefud-dev.conllu", return_doc_ids=True)
 # docs[0][1]
