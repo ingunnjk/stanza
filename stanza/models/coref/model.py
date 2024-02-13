@@ -492,7 +492,8 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
 
         special_tokens = np.array([self.tokenizer.cls_token_id,
                                    self.tokenizer.sep_token_id,
-                                   self.tokenizer.pad_token_id])
+                                   self.tokenizer.pad_token_id,
+                                   self.tokenizer.eos_token_id])
         subword_mask = ~(np.isin(subwords_batches, special_tokens))
 
         subwords_batches_tensor = torch.tensor(subwords_batches,
@@ -513,6 +514,7 @@ class CorefModel:  # pylint: disable=too-many-instance-attributes
                     subwords_batches_tensor,
                     attention_mask=torch.tensor(
                         attention_mask, device=self.config.device))
+
         out = out['last_hidden_state']
 
         # [n_subwords, bert_emb]

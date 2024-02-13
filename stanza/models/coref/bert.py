@@ -45,12 +45,9 @@ def get_subwords_batches(doc: Doc,
             batch = [tok.pad_token] + subwords[start:end] + [tok.eos_token]
         else:
             batch = [tok.cls_token] + subwords[start:end] + [tok.sep_token]
-        batch_ids = [-1] + list(range(start, end)) + [-1]
 
         # Padding to desired length
-        # -1 means the token is a special token
         batch += [tok.pad_token] * (batch_size - length)
-        batch_ids += [-1] * (batch_size - length)
 
         subwords_batches.append([tok.convert_tokens_to_ids(token)
                                  for token in batch])
