@@ -41,7 +41,10 @@ def get_subwords_batches(doc: Doc,
                 end -= 1
 
         length = end - start
-        batch = [tok.cls_token] + subwords[start:end] + [tok.sep_token]
+        if tok.cls_token == None or tok.sep_token == None:
+            batch = [tok.pad_token] + subwords[start:end] + [tok.eos_token]
+        else:
+            batch = [tok.cls_token] + subwords[start:end] + [tok.sep_token]
         batch_ids = [-1] + list(range(start, end)) + [-1]
 
         # Padding to desired length
