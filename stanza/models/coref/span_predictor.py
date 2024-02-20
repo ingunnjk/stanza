@@ -11,20 +11,30 @@ import torch
 class SpanPredictor(torch.nn.Module):
     def __init__(self, input_size: int, distance_emb_size: int):
         super().__init__()
-        self.ffnn = torch.nn.Sequential(
-            torch.nn.Linear(input_size * 2 + 64, input_size),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(0.3),
-            torch.nn.Linear(input_size, 256),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(0.3),
-            torch.nn.Linear(256, 64),
-        )
-        self.conv = torch.nn.Sequential(
-            torch.nn.Conv1d(64, 4, 3, 1, 1),
-            torch.nn.Conv1d(4, 2, 3, 1, 1)
-        )
         self.emb = torch.nn.Embedding(128, distance_emb_size) # [-63, 63] + too_far
+
+        # encode the embeddings into possible start and end scores
+        encoder_layer = torch.nn.TransformerEncoderLayer(d_model=input_size * 2 + 64, nhead=4)
+        self.span_encoder = torch.nn.TransformerEncoder(encoder_layer, num_layers=2, batch_first=True)
+        # and squeeze the encodings into scores
+        self.p_score = torch.nn.Linear(input_size * 2 + 64, 2)
+
+        # relu nonlinearity
+        self.relu_ = torch.nn.ReLU()
+
+        # self.ffnn = torch.nn.Sequential(
+        #     torch.nn.Linear(input_size * 2 + 64, input_size),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Dropout(0.3),
+        #     torch.nn.Linear(input_size, 256),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Dropout(0.3),
+        #     torch.nn.Linear(256, 64),
+        # )
+        # self.conv = torch.nn.Sequential(
+        #     torch.nn.Conv1d(64, 4, 3, 1, 1),
+        #     torch.nn.Conv1d(4, 2, 3, 1, 1)
+        # )
 
     @property
     def device(self) -> torch.device:
@@ -79,8 +89,11 @@ class SpanPredictor(torch.nn.Module):
         padded_pairs = torch.zeros(*padding_mask.shape, pair_matrix.shape[-1], device=words.device)
         padded_pairs[padding_mask] = pair_matrix
 
-        res = self.ffnn(padded_pairs) # [n_heads, n_candidates, last_layer_output]
-        res = self.conv(res.permute(0, 2, 1)).permute(0, 2, 1) # [n_heads, n_candidates, 2]
+        # encode the paded pairs with our transformer
+        # and score for beginnings and ends of spans
+        res = self.relu_(self.p_score(self.relu_(
+            self.span_encoder(padded_pairs)
+        )))
 
         scores = torch.full((heads_ids.shape[0], words.shape[0], 2), float('-inf'), device=words.device)
         scores[rows, cols] = res[padding_mask]
