@@ -88,6 +88,7 @@ class Trainer(BaseTrainer):
                                                        is_peft=self.args.get('use_peft', False),
                                                        bert_finetune_layers=self.args.get('bert_finetune_layers', None))
         self.scheduler = {}
+        self.reduce_scheduler = {}
         if self.args.get("second_stage", False) and self.args.get('second_optim'):
             if self.args.get('second_warmup_steps', None):
                 for name, optimizer in self.optimizer.items():
@@ -95,15 +96,21 @@ class Trainer(BaseTrainer):
                     warmup_scheduler = transformers.get_constant_schedule_with_warmup(optimizer, self.args['second_warmup_steps'])
                     self.scheduler[name] = warmup_scheduler
         else:
-            if "bert_optimizer" in self.optimizer:
-                zero_scheduler = torch.optim.lr_scheduler.ConstantLR(self.optimizer["bert_optimizer"], factor=0, total_iters=self.args['bert_start_finetuning'])
-                warmup_scheduler = transformers.get_constant_schedule_with_warmup(
-                    self.optimizer["bert_optimizer"],
-                    self.args['bert_warmup_steps'])
-                self.scheduler["bert_scheduler"] = torch.optim.lr_scheduler.SequentialLR(
-                    self.optimizer["bert_optimizer"],
-                    schedulers=[zero_scheduler, warmup_scheduler],
-                    milestones=[self.args['bert_start_finetuning']])
+            for name, optimizer in self.optimizer.items():
+                if name.startswith("bert") or name.startswith("peft"):
+                    name = name + "_scheduler"
+                    zero_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=0, total_iters=self.args['bert_start_finetuning'])
+                    warmup_scheduler = transformers.get_constant_schedule_with_warmup(optimizer, self.args['bert_warmup_steps'])
+                    self.scheduler[name] = torch.optim.lr_scheduler.SequentialLR(
+                        optimizer,
+                        schedulers=[zero_scheduler, warmup_scheduler],
+                        milestones=[self.args['bert_start_finetuning']])
+            if self.args.get('plateau_decay', None) and self.args.get('plateau_steps'):
+                for name, optimizer in self.optimizer.items():
+                    name = name + "_rscheduler"
+                    # 'max' because we feed it F1 scores
+                    reduce_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=self.args['plateau_decay'], patience=self.args['plateau_steps'])
+                    self.reduce_scheduler[name] = reduce_scheduler
 
     def update(self, batch, eval=False):
         device = next(self.model.parameters()).device
@@ -127,8 +134,6 @@ class Trainer(BaseTrainer):
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args['max_grad_norm'])
         for opt in self.optimizer.values():
             opt.step()
-        for scheduler in self.scheduler.values():
-            scheduler.step()
         return loss_val
 
     def predict(self, batch, unsort=True):
@@ -170,6 +175,7 @@ class Trainer(BaseTrainer):
         if save_optimizer and self.optimizer is not None:
             params['optimizer_state_dict'] = {k: opt.state_dict() for k, opt in self.optimizer.items()}
             params['scheduler_state_dict'] = {k: scheduler.state_dict() for k, scheduler in self.scheduler.items()}
+            params['reduce_scheduler_state_dict'] = {k: reduce_scheduler.state_dict() for k, reduce_scheduler in self.reduce_scheduler.items()}
 
         try:
             torch.save(params, filename, _use_new_zipfile_serialization=False)
@@ -225,6 +231,11 @@ class Trainer(BaseTrainer):
         if scheduler_state_dict:
             for k, state in scheduler_state_dict.items():
                 self.scheduler[k].load_state_dict(state)
+
+        reduce_scheduler_state_dict = checkpoint.get("reduce_scheduler_state_dict")
+        if reduce_scheduler_state_dict:
+            for k, state in reduce_scheduler_state_dict.items():
+                self.reduce_scheduler[k].load_state_dict(state)
 
         self.global_step = checkpoint.get("global_step", 0)
         self.last_best_step = checkpoint.get("last_best_step", 0)
