@@ -164,6 +164,10 @@ zh_ctb-90 is the 9.0 version of CTB
 
   the splits used are the ones from the file docs/ctb9.0-file-list.txt
     included in the CTB 9.0 release
+
+is_icepahc
+  IcePaHC, The Icelandic Parsed Historical Corpus
+  https://clarin.is/en/resources/icepahc/
 """
 
 import argparse
@@ -190,6 +194,7 @@ from stanza.utils.datasets.constituency.convert_starlang import read_starlang
 from stanza.utils.datasets.constituency.utils import SHARDS, write_dataset
 import stanza.utils.datasets.constituency.vtb_convert as vtb_convert
 import stanza.utils.datasets.constituency.vtb_split as vtb_split
+from stanza.utils.datasets.constituency.convert_icepahc import convert_icepahc_treebank
 
 class UnknownDatasetError(ValueError):
     def __init__(self, dataset, text):
@@ -452,6 +457,20 @@ def process_ptb3_revised(paths, dataset_name, *args):
     datasets = [train_trees, dev_trees, test_trees]
     write_dataset(datasets, output_dir, dataset_name)
 
+def process_icepahc(paths, dataset_name, *args):
+    """
+    Processes the Icelandic dataset, IcePaHC
+    """
+    assert dataset_name == 'is_icepahc'
+    
+    input_file = os.path.join(paths["CONSTITUENCY_BASE"], "simpleicepahc.psd")
+    if not os.path.exists(input_file):
+        raise FileNotFoundError("Unable to find input file for IcePaHC. Expected in {}".format(input_file))
+    output_dir = paths["CONSTITUENCY_DATA_DIR"]
+    
+    datasets = convert_icepahc_treebank(input_file)
+    write_dataset(datasets, output_dir, dataset_name)
+
 
 DATASET_MAPPING = {
     'da_arboretum': process_arboretum,
@@ -476,6 +495,8 @@ DATASET_MAPPING = {
 
     'zh-hans_ctb-51':   process_ctb_51,
     'zh-hans_ctb-90':   process_ctb_90,
+
+    'is_icepahc':   process_icepahc,
 }
 
 def main(dataset_name, *args):
